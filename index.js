@@ -1750,6 +1750,9 @@ app.get('/api/clear-sessions', async (req, res) => {
     res.json({ ok: true, message: 'Bot sessions cleared' });
 });
 
+app.get('/api/show-sessions', (req, res) => {
+    res.json(botSessions);
+});
 
 console.log('🧵 THREAD DEBUG:');
 console.log('TG_CRT_HTF_CHANNEL:', process.env.TG_CRT_HTF_CHANNEL);
