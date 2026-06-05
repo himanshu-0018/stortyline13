@@ -1645,9 +1645,9 @@ app.post('/webhook', async (req, res) => {
             await pushCRTLog(profile,sym,side,
                 `${side==='BULLISH'?'🐂':'🐻'} ${tf} CRT${gradeTag} FORMED [${profile}]: ${side}|Rej:${rej} BO:${bo} Tgt:${tgt}|${at}`,
                 {tf,rej,bo,ext,tgt,action:'CRT_FORMED',align_level:ac.level,grade});
-            const ctm=buildCRTTelegramMessage('CRT',sym,tf,side,grade,profile,{rej,bo,ext,tgt,alignInfo:at});
+            //const ctm=buildCRTTelegramMessage('CRT',sym,tf,side,grade,profile,{rej,bo,ext,tgt,alignInfo:at});
             // ✅ Send with thread ID
-            if(ctm)await sendTelegram(tgCh,ctm,tgThread);
+            //if(ctm)await sendTelegram(tgCh,ctm,tgThread);
             if(profile==='HTF'){
                 await sendBotCRTNotification('CRT',sym,tf,side,ac.level,grade,{rej,bo,ext,tgt});
                 await autoRefreshBotPanels();
@@ -1665,9 +1665,9 @@ app.post('/webhook', async (req, res) => {
             await pushCRTLog(profile,sym,side,
                 `🎯 ${tf} CRT${gradeTag} TARGET HIT [${profile}]: ${side}|Tgt:${tgt}`,
                 {tf,tgt,action:'CRT_TARGET',grade:target.grade});
-            const ctm=buildCRTTelegramMessage('CRT_TARGET',sym,tf,side,target.grade||grade,profile,{rej,bo,ext,tgt,alignInfo:target.align_label||''});
+            //const ctm=buildCRTTelegramMessage('CRT_TARGET',sym,tf,side,target.grade||grade,profile,{rej,bo,ext,tgt,alignInfo:target.align_label||''});
             // ✅ Send with thread ID
-            if(ctm)await sendTelegram(tgCh,ctm,tgThread);
+            //if(ctm)await sendTelegram(tgCh,ctm,tgThread);
             if(profile==='HTF'){
                 await sendBotCRTNotification('CRT_TARGET',sym,tf,side,target.align_level||'NONE',target.grade||grade,{rej,bo,ext,tgt});
                 await autoRefreshBotPanels();
@@ -1685,9 +1685,9 @@ app.post('/webhook', async (req, res) => {
             await pushCRTLog(profile,sym,side,
                 `❌ ${tf} CRT${gradeTag} INVALIDATED [${profile}]: ${side}|Ext:${ext}`,
                 {tf,ext,action:'CRT_INVALID',grade:target.grade});
-            const ctm=buildCRTTelegramMessage('CRT_INVALID',sym,tf,side,target.grade||grade,profile,{rej,bo,ext,tgt,alignInfo:target.align_label||''});
+            //const ctm=buildCRTTelegramMessage('CRT_INVALID',sym,tf,side,target.grade||grade,profile,{rej,bo,ext,tgt,alignInfo:target.align_label||''});
             // ✅ Send with thread ID
-            if(ctm)await sendTelegram(tgCh,ctm,tgThread);
+            //if(ctm)await sendTelegram(tgCh,ctm,tgThread);
             if(profile==='HTF'){
                 await sendBotCRTNotification('CRT_INVALID',sym,tf,side,target.align_level||'NONE',target.grade||grade,{rej,bo,ext,tgt});
                 await autoRefreshBotPanels();
