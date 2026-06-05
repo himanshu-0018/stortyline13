@@ -1744,6 +1744,12 @@ app.get('/stats',(req,res)=>res.sendFile(path.join(__dirname,'public','stats.htm
 app.get('/crt',(req,res)=>res.sendFile(path.join(__dirname,'public','crt.html')));
 app.get('/breakout',(req,res)=>res.sendFile(path.join(__dirname,'public','breakout.html')));
 
+console.log('🧵 THREAD DEBUG:');
+console.log('TG_CRT_HTF_CHANNEL:', process.env.TG_CRT_HTF_CHANNEL);
+console.log('TG_CRT_HTF_THREAD_ID:', process.env.TG_CRT_HTF_THREAD_ID);
+console.log('TG_STORYLINE_CHAT_ID:', process.env.TELEGRAM_STORYLINE_CHAT_ID);
+console.log('TG_STORYLINE_THREAD_ID:', process.env.TG_STORYLINE_THREAD_ID);
+
 app.listen(PORT, () => {
     console.log(`\n🚀 God-Mode V7 on port ${PORT}`);
     console.log(`🤖 Bot: ${TG_BOT_TOKEN ? 'ENABLED' : 'DISABLED'}`);
