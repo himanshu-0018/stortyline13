@@ -1744,6 +1744,13 @@ app.get('/stats',(req,res)=>res.sendFile(path.join(__dirname,'public','stats.htm
 app.get('/crt',(req,res)=>res.sendFile(path.join(__dirname,'public','crt.html')));
 app.get('/breakout',(req,res)=>res.sendFile(path.join(__dirname,'public','breakout.html')));
 
+app.get('/api/clear-sessions', async (req, res) => {
+    botSessions = {};
+    await redisClient.set(REDIS_BOT_SESSIONS, JSON.stringify({}));
+    res.json({ ok: true, message: 'Bot sessions cleared' });
+});
+
+
 console.log('🧵 THREAD DEBUG:');
 console.log('TG_CRT_HTF_CHANNEL:', process.env.TG_CRT_HTF_CHANNEL);
 console.log('TG_CRT_HTF_THREAD_ID:', process.env.TG_CRT_HTF_THREAD_ID);
