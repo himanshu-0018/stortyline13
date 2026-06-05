@@ -919,17 +919,29 @@ async function handleBotUpdate(update) {
 
     // ── COMMANDS ──
 if (update.message) {
-    const chatId = String(update.message.chat.id);
-    const text   = (update.message.text || '').trim();
-    // ✅ Capture thread ID from incoming message
+    const chatId  = String(update.message.chat.id);
+    const text    = (update.message.text || '').trim();
     const threadId = update.message.message_thread_id || null;
+
+    // ✅ IGNORE messages from General (no thread ID in a forum group)
+    // Only respond if it's a private chat OR a specific topic message
+    const isPrivateChat = update.message.chat.type === 'private';
+    const isTopicMessage = update.message.is_topic_message === true;
+
+    if (!isPrivateChat && !isTopicMessage) {
+        // Message is in General — ignore it completely
+        return;
+    }
+
+    // ✅ Only respond to commands (messages starting with /)
+    if (!text.startsWith('/')) return;
 
     if (!isBotAllowed(chatId)) {
         await botSendMessage(chatId, `⛔ <b>Access Denied</b>\n\nYour Chat ID: <code>${chatId}</code>\nContact admin to get access.`);
         return;
     }
 
-    const sess = getSession(chatId, threadId); // ✅ Pass threadId
+    const sess = getSession(chatId, threadId);
     if (sess.lastMsgId) { await botDeleteMessage(chatId, sess.lastMsgId); sess.lastMsgId = null; }
 
     const cmd = text.split(' ')[0].split('@')[0].toLowerCase();
