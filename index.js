@@ -229,8 +229,12 @@ function isBotAllowed(chatId) {
 async function saveBotSessions() {
     try { await redisClient.set(REDIS_BOT_SESSIONS, JSON.stringify(botSessions)); } catch(e) {}
 }
-function getSession(chatId) {
-    if (!botSessions[chatId]) botSessions[chatId] = { lastMsgId: null, view: 'MAIN' };
+function getSession(chatId, threadId = null) {
+    if (!botSessions[chatId]) {
+        botSessions[chatId] = { lastMsgId: null, view: 'MAIN', threadId: null };
+    }
+    // Update threadId if provided
+    if (threadId) botSessions[chatId].threadId = threadId;
     return botSessions[chatId];
 }
 
@@ -878,9 +882,15 @@ async function sendBotCRTNotification(kind, sym, tf, side, alignLevel, grade, { 
     ].join('\n');
 
     for (const chatId of Object.keys(botSessions)) {
-        try { await botSendMessage(chatId, text); } catch(e) {}
+        try {
+            const sess = botSessions[chatId];
+            // ✅ Use the stored thread ID from session
+            const threadId = sess.threadId || null;
+            await botSendMessage(chatId, text, null, threadId);
+        } catch(e) {}
     }
 }
+
 
 // ══════════════════════════════════════════════
 // AUTO-REFRESH ALL OPEN PANELS
@@ -891,14 +901,14 @@ async function autoRefreshBotPanels() {
         if (!sess?.lastMsgId) continue;
         try {
             let text = null, kb = null;
-            if      (sess.view === 'MAIN')     { text = buildMainMenuMsg();    kb = mainMenuKeyboard();           }
-            else if (sess.view === 'DAILY')    { text = buildDailyCRTMsg();    kb = subKeyboard('DAILY_CRT');     }
-            else if (sess.view === 'WEEKLY')   { text = buildWeeklyCRTMsg();   kb = subKeyboard('WEEKLY_CRT');    }
+            if      (sess.view === 'MAIN')     { text = buildMainMenuMsg();    kb = mainMenuKeyboard();          }
+            else if (sess.view === 'DAILY')    { text = buildDailyCRTMsg();    kb = subKeyboard('DAILY_CRT');    }
+            else if (sess.view === 'WEEKLY')   { text = buildWeeklyCRTMsg();   kb = subKeyboard('WEEKLY_CRT');   }
             else if (sess.view === 'FOURHOUR') { text = buildFourHourCRTMsg(); kb = subKeyboard('FOURHOUR_CRT'); }
-            else if (sess.view === 'ACTIVE')   { text = buildActiveCRTMsg();   kb = subKeyboard('ACTIVE_CRT');    }
-            else if (sess.view === 'STATS')    { text = buildStatsMsg();       kb = subKeyboard('CRT_STATS');     }
+            else if (sess.view === 'ACTIVE')   { text = buildActiveCRTMsg();   kb = subKeyboard('ACTIVE_CRT');   }
+            else if (sess.view === 'STATS')    { text = buildStatsMsg();       kb = subKeyboard('CRT_STATS');    }
             if (text) await botEditMessage(chatId, sess.lastMsgId, text, kb);
-        } catch(e) { /* message may be deleted — ignore */ }
+        } catch(e) { /* ignore */ }
     }
 }
 
@@ -908,119 +918,121 @@ async function autoRefreshBotPanels() {
 async function handleBotUpdate(update) {
 
     // ── COMMANDS ──
-    if (update.message) {
-        const chatId = String(update.message.chat.id);
-        const text   = (update.message.text || '').trim();
+if (update.message) {
+    const chatId = String(update.message.chat.id);
+    const text   = (update.message.text || '').trim();
+    // ✅ Capture thread ID from incoming message
+    const threadId = update.message.message_thread_id || null;
 
-        if (!isBotAllowed(chatId)) {
-            await botSendMessage(chatId,
-                `⛔ <b>Access Denied</b>\n\nYour Chat ID: <code>${chatId}</code>\nContact admin to get access.`);
-            return;
-        }
-
-        const sess = getSession(chatId);
-        if (sess.lastMsgId) { await botDeleteMessage(chatId, sess.lastMsgId); sess.lastMsgId = null; }
-
-        // Support /command@botname format in groups
-        const cmd = text.split(' ')[0].split('@')[0].toLowerCase();
-
-        if (cmd === '/start' || cmd === '/menu') {
-            sess.lastMsgId = await botSendMessage(chatId, buildMainMenuMsg(), mainMenuKeyboard());
-            sess.view = 'MAIN';
-        } else if (cmd === '/daily') {
-            sess.lastMsgId = await botSendMessage(chatId, buildDailyCRTMsg(), subKeyboard('DAILY_CRT'));
-            sess.view = 'DAILY';
-        } else if (cmd === '/weekly') {
-            sess.lastMsgId = await botSendMessage(chatId, buildWeeklyCRTMsg(), subKeyboard('WEEKLY_CRT'));
-            sess.view = 'WEEKLY';
-        } else if (cmd === '/4h' || cmd === '/fourhour') {
-            sess.lastMsgId = await botSendMessage(chatId, buildFourHourCRTMsg(), subKeyboard('FOURHOUR_CRT'));
-            sess.view = 'FOURHOUR';
-        } else if (cmd === '/active') {
-            sess.lastMsgId = await botSendMessage(chatId, buildActiveCRTMsg(), subKeyboard('ACTIVE_CRT'));
-            sess.view = 'ACTIVE';
-        } else if (cmd === '/stats') {
-            sess.lastMsgId = await botSendMessage(chatId, buildStatsMsg(), subKeyboard('CRT_STATS'));
-            sess.view = 'STATS';
-        } else if (cmd === '/help') {
-            sess.lastMsgId = await botSendMessage(chatId, [
-                B_TOP,
-                `║  🤖 <b>GOD-MODE CRT BOT</b>`,
-                `║  Command Reference`,
-                B_BOT,
-                ``,
-                `  /start      🏠 Main terminal`,
-                `  /daily      📅 Daily CRTs (aligned)`,
-                `  /weekly     📆 Weekly CRTs (MO)`,
-                `  /4h         ⏰ 4H CRTs (aligned)`,
-                `  /active     🟢 Active positions`,
-                `  /stats      📊 Performance stats`,
-                `  /help       ❓ This help`,
-                ``,
-                B_THIN,
-                ``,
-                `  <b>🔔 Grades:</b>`,
-                `  ⭐ A+ = Sweep + SNR Rejection + BO`,
-                `  🔶 B+ = Sweep + BO (no rejection)`,
-                ``,
-                `  <b>🔔 Auto-Notifications:</b>`,
-                `  📅 Daily  →  MO+W ✅  MO ⚡  W ⚡`,
-                `  📆 Weekly →  MO aligned ⚡ only`,
-                `  ⏰ 4H     →  D / D+W / D+MO / W+MO / D+W+MO ✅`,
-                ``,
-                `  <b>📊 Hit Probability:</b>`,
-                `  New CRT alerts show historical`,
-                `  hit rate for that exact combo`,
-                ``,
-                `  <b>📡 Live Auto-Refresh:</b>`,
-                `  Panels update automatically`,
-                ``,
-                B_DASH,
-            ].join('\n'), subKeyboard('MAIN_REFRESH'));
-            sess.view = 'HELP';
-        } else {
-            sess.lastMsgId = await botSendMessage(chatId, `❓ Unknown command.\n\nType /help or /start`);
-        }
-
-        await saveBotSessions();
+    if (!isBotAllowed(chatId)) {
+        await botSendMessage(chatId, `⛔ <b>Access Denied</b>\n\nYour Chat ID: <code>${chatId}</code>\nContact admin to get access.`);
         return;
     }
 
-    // ── CALLBACKS ──
-    if (update.callback_query) {
-        const cb     = update.callback_query;
-        const chatId = String(cb.message.chat.id);
-        const msgId  = cb.message.message_id;
-        const data   = cb.data;
+    const sess = getSession(chatId, threadId); // ✅ Pass threadId
+    if (sess.lastMsgId) { await botDeleteMessage(chatId, sess.lastMsgId); sess.lastMsgId = null; }
 
-        if (!isBotAllowed(chatId)) { await botAnswerCallback(cb.id, '⛔ Access denied'); return; }
+    const cmd = text.split(' ')[0].split('@')[0].toLowerCase();
 
-        const sess = getSession(chatId);
-        sess.lastMsgId = msgId;
-        await botAnswerCallback(cb.id, '✅');
-
-        if (data === 'MAIN' || data === 'MAIN_REFRESH') {
-            await botEditMessage(chatId, msgId, buildMainMenuMsg(), mainMenuKeyboard());
-            sess.view = 'MAIN';
-        } else if (data === 'DAILY_CRT') {
-            await botEditMessage(chatId, msgId, buildDailyCRTMsg(), subKeyboard('DAILY_CRT'));
-            sess.view = 'DAILY';
-        } else if (data === 'WEEKLY_CRT') {
-            await botEditMessage(chatId, msgId, buildWeeklyCRTMsg(), subKeyboard('WEEKLY_CRT'));
-            sess.view = 'WEEKLY';
-        } else if (data === 'FOURHOUR_CRT') {
-            await botEditMessage(chatId, msgId, buildFourHourCRTMsg(), subKeyboard('FOURHOUR_CRT'));
-            sess.view = 'FOURHOUR';
-        } else if (data === 'ACTIVE_CRT') {
-            await botEditMessage(chatId, msgId, buildActiveCRTMsg(), subKeyboard('ACTIVE_CRT'));
-            sess.view = 'ACTIVE';
-        } else if (data === 'CRT_STATS') {
-            await botEditMessage(chatId, msgId, buildStatsMsg(), subKeyboard('CRT_STATS'));
-            sess.view = 'STATS';
-        }
-
-        await saveBotSessions();
+    if (cmd === '/start' || cmd === '/menu') {
+        sess.lastMsgId = await botSendMessage(chatId, buildMainMenuMsg(), mainMenuKeyboard(), sess.threadId);
+        sess.view = 'MAIN';
+    } else if (cmd === '/daily') {
+        sess.lastMsgId = await botSendMessage(chatId, buildDailyCRTMsg(), subKeyboard('DAILY_CRT'), sess.threadId);
+        sess.view = 'DAILY';
+    } else if (cmd === '/weekly') {
+        sess.lastMsgId = await botSendMessage(chatId, buildWeeklyCRTMsg(), subKeyboard('WEEKLY_CRT'), sess.threadId);
+        sess.view = 'WEEKLY';
+    } else if (cmd === '/4h' || cmd === '/fourhour') {
+        sess.lastMsgId = await botSendMessage(chatId, buildFourHourCRTMsg(), subKeyboard('FOURHOUR_CRT'), sess.threadId);
+        sess.view = 'FOURHOUR';
+    } else if (cmd === '/active') {
+        sess.lastMsgId = await botSendMessage(chatId, buildActiveCRTMsg(), subKeyboard('ACTIVE_CRT'), sess.threadId);
+        sess.view = 'ACTIVE';
+    } else if (cmd === '/stats') {
+        sess.lastMsgId = await botSendMessage(chatId, buildStatsMsg(), subKeyboard('CRT_STATS'), sess.threadId);
+        sess.view = 'STATS';
+    } else if (cmd === '/help') {
+        sess.lastMsgId = await botSendMessage(chatId, [
+            B_TOP,
+            `║  🤖 <b>GOD-MODE CRT BOT</b>`,
+            `║  Command Reference`,
+            B_BOT,
+            ``,
+            `  /start      🏠 Main terminal`,
+            `  /daily      📅 Daily CRTs (aligned)`,
+            `  /weekly     📆 Weekly CRTs (MO)`,
+            `  /4h         ⏰ 4H CRTs (aligned)`,
+            `  /active     🟢 Active positions`,
+            `  /stats      📊 Performance stats`,
+            `  /help       ❓ This help`,
+            ``,
+            B_THIN,
+            ``,
+            `  <b>🔔 Grades:</b>`,
+            `  ⭐ A+ = Sweep + SNR Rejection + BO`,
+            `  🔶 B+ = Sweep + BO (no rejection)`,
+            ``,
+            `  <b>🔔 Auto-Notifications:</b>`,
+            `  📅 Daily  →  MO+W ✅  MO ⚡  W ⚡`,
+            `  📆 Weekly →  MO aligned ⚡ only`,
+            `  ⏰ 4H     →  D / D+W / D+MO / W+MO / D+W+MO ✅`,
+            ``,
+            `  <b>📊 Hit Probability:</b>`,
+            `  New CRT alerts show historical`,
+            `  hit rate for that exact combo`,
+            ``,
+            `  <b>📡 Live Auto-Refresh:</b>`,
+            `  Panels update automatically`,
+            ``,
+            B_DASH,
+        ].join('\n'), subKeyboard('MAIN_REFRESH'), sess.threadId);
+        sess.view = 'HELP';
+    } else {
+        sess.lastMsgId = await botSendMessage(chatId, `❓ Unknown command.\n\nType /help or /start`, null, sess.threadId);
     }
+
+    await saveBotSessions();
+    return;
+}
+
+    // ── CALLBACKS ──
+if (update.callback_query) {
+    const cb     = update.callback_query;
+    const chatId = String(cb.message.chat.id);
+    const msgId  = cb.message.message_id;
+    const data   = cb.data;
+    // ✅ Capture thread ID from callback message
+    const threadId = cb.message.message_thread_id || null;
+
+    if (!isBotAllowed(chatId)) { await botAnswerCallback(cb.id, '⛔ Access denied'); return; }
+
+    const sess = getSession(chatId, threadId); // ✅ Pass threadId
+    sess.lastMsgId = msgId;
+    await botAnswerCallback(cb.id, '✅');
+
+    if (data === 'MAIN' || data === 'MAIN_REFRESH') {
+        await botEditMessage(chatId, msgId, buildMainMenuMsg(), mainMenuKeyboard());
+        sess.view = 'MAIN';
+    } else if (data === 'DAILY_CRT') {
+        await botEditMessage(chatId, msgId, buildDailyCRTMsg(), subKeyboard('DAILY_CRT'));
+        sess.view = 'DAILY';
+    } else if (data === 'WEEKLY_CRT') {
+        await botEditMessage(chatId, msgId, buildWeeklyCRTMsg(), subKeyboard('WEEKLY_CRT'));
+        sess.view = 'WEEKLY';
+    } else if (data === 'FOURHOUR_CRT') {
+        await botEditMessage(chatId, msgId, buildFourHourCRTMsg(), subKeyboard('FOURHOUR_CRT'));
+        sess.view = 'FOURHOUR';
+    } else if (data === 'ACTIVE_CRT') {
+        await botEditMessage(chatId, msgId, buildActiveCRTMsg(), subKeyboard('ACTIVE_CRT'));
+        sess.view = 'ACTIVE';
+    } else if (data === 'CRT_STATS') {
+        await botEditMessage(chatId, msgId, buildStatsMsg(), subKeyboard('CRT_STATS'));
+        sess.view = 'STATS';
+    }
+
+    await saveBotSessions();
+}
 }
 
 // ══════════════════════════════════════════════
