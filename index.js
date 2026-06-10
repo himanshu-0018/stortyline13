@@ -1061,6 +1061,10 @@ async function autoRefreshBotPanels() {
 // ══════════════════════════════════════════════
 async function handleBotUpdate(update) {
 
+    if (update.message && update.message.entities) {
+    console.log('ENTITIES:', JSON.stringify(update.message.entities, null, 2));
+}
+    
     // ── COMMANDS ──
 if (update.message) {
     const chatId  = String(update.message.chat.id);
