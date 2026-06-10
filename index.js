@@ -10,6 +10,33 @@ const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// ══════════════════════════════════════════════
+// PREMIUM EMOJI HELPER
+// ══════════════════════════════════════════════
+const PE = {
+    signal:    (fb) => `<tg-emoji emoji-id="5256134032852278918">${fb}</tg-emoji>`,  // 📡
+    clock:     (fb) => `<tg-emoji emoji-id="5445010743021818722">${fb}</tg-emoji>`,  // 🕐
+    pin:       (fb) => `<tg-emoji emoji-id="5397782960512444700">${fb}</tg-emoji>`,  // 📌
+    green:     (fb) => `<tg-emoji emoji-id="5416081784641168838">${fb}</tg-emoji>`,  // 🟢
+    daily:     (fb) => `<tg-emoji emoji-id="5364233403300330811">${fb}</tg-emoji>`,  // 📅
+    star:      (fb) => `<tg-emoji emoji-id="5341533904140525583">${fb}</tg-emoji>`,  // ⭐
+    check:     (fb) => `<tg-emoji emoji-id="5364035134725043602">${fb}</tg-emoji>`,  // ✅
+    bolt:      (fb) => `<tg-emoji emoji-id="5411590687663608498">${fb}</tg-emoji>`,  // ⚡
+    alarm:     (fb) => `<tg-emoji emoji-id="5431807687136395567">${fb}</tg-emoji>`,  // ⏰
+    chart:     (fb) => `<tg-emoji emoji-id="5244837092042750681">${fb}</tg-emoji>`,  // 📈
+    bear:      (fb) => `<tg-emoji emoji-id="5411089297476441876">${fb}</tg-emoji>`,  // 🐻
+    bull:      (fb) => `<tg-emoji emoji-id="5411233191765759009">${fb}</tg-emoji>`,  // 🐂
+    point:     (fb) => `<tg-emoji emoji-id="5231102735817918643">${fb}</tg-emoji>`,  // 👇
+    stats:     (fb) => `<tg-emoji emoji-id="5231200819986047254">${fb}</tg-emoji>`,  // 📊
+    refresh:   (fb) => `<tg-emoji emoji-id="5226702984204797593">${fb}</tg-emoji>`,  // 🔄
+    weekly:    (fb) => `<tg-emoji emoji-id="5199550690585763036">${fb}</tg-emoji>`,  // 📆
+    red:       (fb) => `<tg-emoji emoji-id="5411225014148014586">${fb}</tg-emoji>`,  // 🔴
+    cross:     (fb) => `<tg-emoji emoji-id="5210952531676504517">${fb}</tg-emoji>`,  // ❌
+    home:      (fb) => `<tg-emoji emoji-id="5416041192905265756">${fb}</tg-emoji>`,  // 🏠
+};
+
+
+
 const PORT                       = process.env.PORT || 3000;
 const TELEGRAM_TOKEN             = process.env.TELEGRAM_TOKEN;
 const TELEGRAM_STORYLINE_CHAT_ID = process.env.TELEGRAM_STORYLINE_CHAT_ID;
@@ -248,28 +275,45 @@ const B_THIN = `┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈�
 const B_DASH = `──────────────────────────────`;
 
 function statusIcon(s) {
-    if (s === 'ACTIVE')  return '🟢';
+    if (s === 'ACTIVE')  return PE.green('🟢');
     if (s === 'TP_HIT')  return '🎯';
-    if (s === 'INVALID') return '🔴';
+    if (s === 'INVALID') return PE.red('🔴');
     return '⚪';
 }
-function dirIcon(side)  { return side === 'BULLISH' ? '🐂' : '🐻'; }
-function dirBar(side)   { return side === 'BULLISH' ? '🟩🟩🟩🟩🟩' : '🟥🟥🟥🟥🟥'; }
-function gradeIcon(g)   { return g === 'A+' ? '⭐ A+' : g === 'B+' ? '🔶 B+' : ''; }
-function gradeBar(g)    { return g === 'A+' ? '🌟🌟🌟🌟🌟' : '🔶🔶🔶🔶🔶'; }
+
+function dirIcon(side) {
+    return side === 'BULLISH' ? PE.bull('🐂') : PE.bear('🐻');
+}
+
+function dirBar(side) {
+    return side === 'BULLISH'
+        ? `${PE.check('✅')}${PE.check('✅')}${PE.check('✅')}${PE.check('✅')}${PE.check('✅')}`
+        : `${PE.red('🔴')}${PE.red('🔴')}${PE.red('🔴')}${PE.red('🔴')}${PE.red('🔴')}`;
+}
+
+function gradeIcon(g) {
+    if (g === 'A+') return `${PE.star('⭐')} A+`;
+    if (g === 'B+') return `🔶 B+`;
+    return '';
+}
+
+function gradeBar(g) {
+    if (g === 'A+') return `${PE.star('⭐')}${PE.star('⭐')}${PE.star('⭐')}${PE.star('⭐')}${PE.star('⭐')}`;
+    return '🔶🔶🔶🔶🔶';
+}
 
 function alignBadge(lv) {
-    if (lv === 'MO+W+D') return '✅ MO+W+D Aligned (GOD)';
-    if (lv === 'MO+W')   return '⚡ MO+W Aligned';
-    if (lv === 'MO+D')   return '⚡ MO+D Aligned';
-    if (lv === 'W+D')    return '⚡ W+D Aligned';
-    if (lv === 'D+W+MO') return '✅ D+W+MO Aligned';
-    if (lv === 'D+W')    return '⚡ D+W Aligned';
-    if (lv === 'D+MO')   return '⚡ D+MO Aligned';
-    if (lv === 'D')      return '⚡ D Aligned';
-    if (lv === 'W+MO')   return '⚡ W+MO Aligned';
-    if (lv === 'W')      return '⚡ W Aligned';
-    if (lv === 'MO')     return '⚡ MO Aligned';
+    if (lv === 'MO+W+D') return `${PE.check('✅')} MO+W+D Aligned (GOD)`;
+    if (lv === 'MO+W')   return `${PE.check('✅')} MO+W Aligned`;
+    if (lv === 'MO+D')   return `${PE.bolt('⚡')} MO+D Aligned`;
+    if (lv === 'W+D')    return `${PE.bolt('⚡')} W+D Aligned`;
+    if (lv === 'D+W+MO') return `${PE.check('✅')} D+W+MO Aligned`;
+    if (lv === 'D+W')    return `${PE.bolt('⚡')} D+W Aligned`;
+    if (lv === 'D+MO')   return `${PE.bolt('⚡')} D+MO Aligned`;
+    if (lv === 'D')      return `${PE.bolt('⚡')} D Aligned`;
+    if (lv === 'W+MO')   return `${PE.bolt('⚡')} W+MO Aligned`;
+    if (lv === 'W')      return `${PE.bolt('⚡')} W Aligned`;
+    if (lv === 'MO')     return `${PE.bolt('⚡')} MO Aligned`;
     return '⚪ No Alignment';
 }
 function timeStr(ts) {
@@ -378,6 +422,7 @@ function mainMenuKeyboard() {
          { text: '🔄 Refresh',       callback_data: 'MAIN_REFRESH' }],
     ]};
 }
+
 function subKeyboard(refreshCb) {
     return { inline_keyboard: [
         [{ text: '🔄 Refresh',   callback_data: refreshCb },
@@ -471,29 +516,29 @@ function buildMainMenuMsg() {
 
     return [
         B_TOP,
-        `║  🏛️  <b>GOD-MODE CRT TERMINAL</b>`,
-        `║  📡 HTF Profile  •  Live`,
+        `║  ${PE.signal('📡')} <b>GOD-MODE CRT TERMINAL</b>`,
+        `║  ${PE.signal('📡')} HTF Profile  •  Live`,
         B_MID,
-        `║  🕐 <i>${nowUTC()}</i>`,
-        B_MID,
-        `║`,
-        `║  📌 <b>ACTIVE POSITIONS</b>`,
-        `║`,
-        `║  🟢 Total Active:  <b>${totalActive}</b>`,
-        `║`,
-        `║  📅 Daily:   <b>${dailyActive}</b>  ⭐A+: <b>${dailyAplus}</b>  🔶B+: <b>${dailyBplus}</b>`,
-        `║    ✅ MO+W: <b>${dailyMoW}</b>   ⚡MO: <b>${dailyMo}</b>   ⚡W: <b>${dailyW}</b>`,
-        `║`,
-        `║  📆 Weekly:  <b>${weeklyActive}</b>  ⭐A+: <b>${weeklyAplus}</b>  🔶B+: <b>${weeklyBplus}</b>`,
-        `║    ⚡ MO:   <b>${weeklyMo}</b>`,
-        `║`,
-        `║  ⏰ 4H:     <b>${fourHActive}</b>  ⭐A+: <b>${fourHAplus}</b>  🔶B+: <b>${fourHBplus}</b>`,
-        `║    ✅ D+W+MO: <b>${fourH_DWM}</b>   ⚡D+W: <b>${fourH_DW}</b>   ⚡D+MO: <b>${fourH_DMO}</b>`,
-        `║    ⚡ D: <b>${fourH_D}</b>   ⚡W+MO: <b>${fourH_WMO}</b>   ⚡W: <b>${fourH_W}</b>   ⚡MO: <b>${fourH_MO}</b>`,
-        `║`,
+        `║  ${PE.clock('🕐')} <i>${nowUTC()}</i>`,
         B_MID,
         `║`,
-        `║  📈 <b>WIN RATES  (A+ / B+)</b>`,
+        `║  ${PE.pin('📌')} <b>ACTIVE POSITIONS</b>`,
+        `║`,
+        `║  ${PE.green('🟢')} Total Active:  <b>${totalActive}</b>`,
+        `║`,
+        `║  ${PE.daily('📅')} Daily:   <b>${dailyActive}</b>  ${PE.star('⭐')}A+: <b>${dailyAplus}</b>  🔶B+: <b>${dailyBplus}</b>`,
+        `║    ${PE.check('✅')} MO+W: <b>${dailyMoW}</b>   ${PE.bolt('⚡')}MO: <b>${dailyMo}</b>   ${PE.bolt('⚡')}W: <b>${dailyW}</b>`,
+        `║`,
+        `║  ${PE.weekly('📆')} Weekly:  <b>${weeklyActive}</b>  ${PE.star('⭐')}A+: <b>${weeklyAplus}</b>  🔶B+: <b>${weeklyBplus}</b>`,
+        `║    ${PE.bolt('⚡')} MO:   <b>${weeklyMo}</b>`,
+        `║`,
+        `║  ${PE.alarm('⏰')} 4H:     <b>${fourHActive}</b>  ${PE.star('⭐')}A+: <b>${fourHAplus}</b>  🔶B+: <b>${fourHBplus}</b>`,
+        `║    ${PE.check('✅')} D+W+MO: <b>${fourH_DWM}</b>   ${PE.bolt('⚡')}D+W: <b>${fourH_DW}</b>   ${PE.bolt('⚡')}D+MO: <b>${fourH_DMO}</b>`,
+        `║    ${PE.bolt('⚡')} D: <b>${fourH_D}</b>   ${PE.bolt('⚡')}W+MO: <b>${fourH_WMO}</b>   ${PE.bolt('⚡')}W: <b>${fourH_W}</b>   ${PE.bolt('⚡')}MO: <b>${fourH_MO}</b>`,
+        `║`,
+        B_MID,
+        `║`,
+        `║  ${PE.chart('📈')} <b>WIN RATES  (A+ / B+)</b>`,
         `║`,
         `║  Overall  ${progressBar(stats.overall.tp, stats.overall.inv)}`,
         `║  A+       ${progressBar(stats.overall_aplus.tp, stats.overall_aplus.inv)}`,
@@ -505,14 +550,18 @@ function buildMainMenuMsg() {
         `║`,
         B_MID,
         `║`,
-        `║  📋 <b>RECENT SIGNALS</b>`,
+        `║  ${PE.stats('📊')} <b>RECENT SIGNALS</b>`,
         `║`,
         ...(() => {
             if (recent.length === 0) return [`║    <i>No recent signals</i>`];
             return recent.map(e => {
                 const t = shortTime(e.timestamp);
                 const d = dirIcon(e.side);
-                const a = ['MO+W','D+W+MO'].includes(e.align_level) ? '✅' : e.align_level !== 'NONE' ? '⚡' : '⚪';
+                const a = ['MO+W','D+W+MO'].includes(e.align_level)
+                    ? PE.check('✅')
+                    : e.align_level !== 'NONE'
+                    ? PE.bolt('⚡')
+                    : '⚪';
                 const g = e.grade ? ` [${e.grade}]` : '';
                 return `║  ${t}  ${d} <b>${e.symbol}</b>  ${a} ${e.align_level || '—'}${g}`;
             });
@@ -520,7 +569,7 @@ function buildMainMenuMsg() {
         `║`,
         B_BOT,
         ``,
-        `👇 <b>Select a section below</b>`,
+        `${PE.point('👇')} <b>Select a section below</b>`,
     ].join('\n');
 }
 
@@ -542,7 +591,6 @@ function buildDailyCRTMsg() {
         }
     }
 
-    // Sort each group: higher prob first, then A+ before B+
     for (const key in grouped) {
         grouped[key].sort((a, b) => {
             if (b.probValue !== a.probValue) return b.probValue - a.probValue;
@@ -552,7 +600,6 @@ function buildDailyCRTMsg() {
     }
 
     const total = grouped['MO+W'].length + grouped['MO'].length + grouped['W'].length;
-
     const activeCount = Object.values(grouped).reduce((s, arr) =>
         s + arr.filter(x => x.e.status === 'ACTIVE').length, 0);
     const tpCount = Object.values(grouped).reduce((s, arr) =>
@@ -562,11 +609,11 @@ function buildDailyCRTMsg() {
 
     const lines = [
         B_TOP,
-        `║  📅 <b>DAILY CRT  —  HTF</b>`,
+        `║  ${PE.daily('📅')} <b>DAILY CRT  —  HTF</b>`,
         `║  Aligned Signals Only`,
         B_MID,
-        `║  🕐 <i>${nowUTC()}</i>`,
-        `║  📊 Aligned: <b>${total}</b>   🟢 <b>${activeCount}</b>   🎯 <b>${tpCount}</b>   🔴 <b>${invCount}</b>`,
+        `║  ${PE.clock('🕐')} <i>${nowUTC()}</i>`,
+        `║  ${PE.stats('📊')} Aligned: <b>${total}</b>   ${PE.green('🟢')} <b>${activeCount}</b>   🎯 <b>${tpCount}</b>   ${PE.red('🔴')} <b>${invCount}</b>`,
         B_BOT,
         ``,
     ];
@@ -582,12 +629,9 @@ function buildDailyCRTMsg() {
         lines.push(B_THIN);
         for (const { sym, e, prob } of items) {
             const g = e.grade ? ` ${gradeIcon(e.grade)}` : '';
-            let probLine = '';
-            if (prob.found) {
-                probLine = `  ┗  📊 <b>${prob.pct}%</b> (${prob.tp}🎯${prob.inv}❌ · <i>${prob.label}</i>)`;
-            } else {
-                probLine = `  ┗  📊 <i>No data</i>`;
-            }
+            let probLine = prob.found
+                ? `  ┗  ${PE.stats('📊')} <b>${prob.pct}%</b> (${prob.tp}🎯${prob.inv}${PE.cross('❌')} · <i>${prob.label}</i>)`
+                : `  ┗  ${PE.stats('📊')} <i>No data</i>`;
             lines.push(``,
                 `  ${statusIcon(e.status)} <b>${sym}</b>   ${dirIcon(e.side)} ${dirBar(e.side)}${g}`,
                 `  ┃  Status: <b>${e.status}</b>`,
@@ -596,9 +640,9 @@ function buildDailyCRTMsg() {
         lines.push(``);
     }
 
-    renderGroup('MO + W  ALIGNED', '✅', grouped['MO+W']);
-    renderGroup('MO  ALIGNED',     '⚡', grouped['MO']);
-    renderGroup('W   ALIGNED',     '⚡', grouped['W']);
+    renderGroup('MO + W  ALIGNED', PE.check('✅'), grouped['MO+W']);
+    renderGroup('MO  ALIGNED',     PE.bolt('⚡'),  grouped['MO']);
+    renderGroup('W   ALIGNED',     PE.bolt('⚡'),  grouped['W']);
 
     lines.push(B_DASH);
     return lines.join('\n');
@@ -621,7 +665,6 @@ function buildWeeklyCRTMsg() {
         }
     }
 
-    // Sort: higher prob first, A+ before B+, newer first
     items.sort((a, b) => {
         if (b.probValue !== a.probValue) return b.probValue - a.probValue;
         if (a.gradeRank !== b.gradeRank) return a.gradeRank - b.gradeRank;
@@ -634,11 +677,11 @@ function buildWeeklyCRTMsg() {
 
     const lines = [
         B_TOP,
-        `║  📆 <b>WEEKLY CRT  —  HTF</b>`,
+        `║  ${PE.weekly('📆')} <b>WEEKLY CRT  —  HTF</b>`,
         `║  MO-Aligned Only`,
         B_MID,
-        `║  🕐 <i>${nowUTC()}</i>`,
-        `║  ⚡ MO Aligned: <b>${items.length}</b>   🟢 <b>${activeCount}</b>   🎯 <b>${tpCount}</b>   🔴 <b>${invCount}</b>`,
+        `║  ${PE.clock('🕐')} <i>${nowUTC()}</i>`,
+        `║  ${PE.bolt('⚡')} MO Aligned: <b>${items.length}</b>   ${PE.green('🟢')} <b>${activeCount}</b>   🎯 <b>${tpCount}</b>   ${PE.red('🔴')} <b>${invCount}</b>`,
         B_BOT,
         ``,
     ];
@@ -648,17 +691,14 @@ function buildWeeklyCRTMsg() {
         return lines.join('\n');
     }
 
-    lines.push(`⚡ <b>MO  ALIGNED  WEEKLY</b>`);
+    lines.push(`${PE.bolt('⚡')} <b>MO  ALIGNED  WEEKLY</b>`);
     lines.push(B_THIN);
 
     for (const { sym, e, prob } of items) {
         const g = e.grade ? ` ${gradeIcon(e.grade)}` : '';
-        let probLine = '';
-        if (prob.found) {
-            probLine = `  ┗  📊 <b>${prob.pct}%</b> (${prob.tp}🎯${prob.inv}❌ · <i>${prob.label}</i>)`;
-        } else {
-            probLine = `  ┗  📊 <i>No data</i>`;
-        }
+        let probLine = prob.found
+            ? `  ┗  ${PE.stats('📊')} <b>${prob.pct}%</b> (${prob.tp}🎯${prob.inv}${PE.cross('❌')} · <i>${prob.label}</i>)`
+            : `  ┗  ${PE.stats('📊')} <i>No data</i>`;
         lines.push(``,
             `  ${statusIcon(e.status)} <b>${sym}</b>   ${dirIcon(e.side)} ${dirBar(e.side)}${g}`,
             `  ┃  Status: <b>${e.status}</b>`,
@@ -708,28 +748,25 @@ function buildFourHourCRTMsg() {
 
     const lines = [
         B_TOP,
-        `║  ⏰ <b>4H CRT  —  HTF</b>`,
+        `║  ${PE.alarm('⏰')} <b>4H CRT  —  HTF</b>`,
         `║  Aligned Signals Only (1H BO)`,
         B_MID,
-        `║  🕐 <i>${nowUTC()}</i>`,
-        `║  📊 Aligned: <b>${total}</b>   🟢 <b>${activeCount}</b>   🎯 <b>${tpCount}</b>   🔴 <b>${invCount}</b>`,
+        `║  ${PE.clock('🕐')} <i>${nowUTC()}</i>`,
+        `║  ${PE.stats('📊')} Aligned: <b>${total}</b>   ${PE.green('🟢')} <b>${activeCount}</b>   🎯 <b>${tpCount}</b>   ${PE.red('🔴')} <b>${invCount}</b>`,
         B_BOT,
         ``,
     ];
 
-    if (total === 0) {
-        lines.push(B_THIN, ``, `   📭 <i>No aligned 4H CRTs</i>`, `   <i>Waiting for D / W / MO alignment...</i>`, ``, B_THIN);
-        return lines.join('\n');
-    }
+    // ... empty state stays same ...
 
     const groupLabels = {
-        'D+W+MO': { label: 'D + W + MO  ALIGNED', emoji: '✅' },
-        'D+W':    { label: 'D + W  ALIGNED',       emoji: '⚡' },
-        'D+MO':   { label: 'D + MO  ALIGNED',      emoji: '⚡' },
-        'D':      { label: 'D  ALIGNED',            emoji: '⚡' },
-        'W+MO':   { label: 'W + MO  ALIGNED',       emoji: '⚡' },
-        'W':      { label: 'W  ALIGNED',            emoji: '⚡' },
-        'MO':     { label: 'MO  ALIGNED',           emoji: '⚡' },
+        'D+W+MO': { label: 'D + W + MO  ALIGNED', emoji: PE.check('✅') },
+        'D+W':    { label: 'D + W  ALIGNED',       emoji: PE.bolt('⚡')  },
+        'D+MO':   { label: 'D + MO  ALIGNED',      emoji: PE.bolt('⚡')  },
+        'D':      { label: 'D  ALIGNED',            emoji: PE.bolt('⚡')  },
+        'W+MO':   { label: 'W + MO  ALIGNED',       emoji: PE.bolt('⚡')  },
+        'W':      { label: 'W  ALIGNED',            emoji: PE.bolt('⚡')  },
+        'MO':     { label: 'MO  ALIGNED',           emoji: PE.bolt('⚡')  },
     };
 
     function renderGroup(key, items) {
@@ -739,12 +776,9 @@ function buildFourHourCRTMsg() {
         lines.push(B_THIN);
         for (const { sym, e, prob } of items) {
             const g = e.grade ? ` ${gradeIcon(e.grade)}` : '';
-            let probLine = '';
-            if (prob.found) {
-                probLine = `  ┗  📊 <b>${prob.pct}%</b> (${prob.tp}🎯${prob.inv}❌ · <i>${prob.label}</i>)`;
-            } else {
-                probLine = `  ┗  📊 <i>No data</i>`;
-            }
+            let probLine = prob.found
+                ? `  ┗  ${PE.stats('📊')} <b>${prob.pct}%</b> (${prob.tp}🎯${prob.inv}${PE.cross('❌')} · <i>${prob.label}</i>)`
+                : `  ┗  ${PE.stats('📊')} <i>No data</i>`;
             lines.push(``,
                 `  ${statusIcon(e.status)} <b>${sym}</b>   ${dirIcon(e.side)} ${dirBar(e.side)}${g}`,
                 `  ┃  Status: <b>${e.status}</b>`,
@@ -811,15 +845,24 @@ function buildActiveCRTMsg() {
 
     const header = [
         B_TOP,
-        `║  🟢 <b>ACTIVE CRTs  —  HTF</b>`,
+        `║  ${PE.green('🟢')} <b>ACTIVE CRTs  —  HTF</b>`,
         `║  Sorted by TF + Hit Probability`,
         B_MID,
-        `║  🕐 <i>${nowUTC()}</i>`,
-        `║  🟢 Total Active: <b>${items.length}</b>`,
-        `║  📆 Weekly: <b>${weeklyCount}</b>   📅 Daily: <b>${dailyCount}</b>   ⏰ 4H: <b>${fourHCount}</b>`,
+        `║  ${PE.clock('🕐')} <i>${nowUTC()}</i>`,
+        `║  ${PE.green('🟢')} Total Active: <b>${items.length}</b>`,
+        `║  ${PE.weekly('📆')} Weekly: <b>${weeklyCount}</b>   ${PE.daily('📅')} Daily: <b>${dailyCount}</b>   ${PE.alarm('⏰')} 4H: <b>${fourHCount}</b>`,
         B_BOT,
         ``,
     ].join('\n');
+
+    // Inside the loop, replace the block:
+        const block = [
+            sectionHeader,
+            `  ${PE.green('🟢')} <b>${sym}</b>  ${dirIcon(e.side)}${g}`,
+            `  ┃  ${alignBadge(e.align_level)}`,
+            probLine,
+            ``
+        ].join('\n');
 
     if (items.length === 0) {
         return header + '\n' + B_THIN + '\n\n   📭 <i>No active CRTs right now</i>\n\n' + B_THIN;
@@ -883,83 +926,83 @@ function buildStatsMsg() {
 
     return [
         B_TOP,
-        `║  📈 <b>CRT STATISTICS  —  HTF</b>`,
+        `║  ${PE.chart('📈')} <b>CRT STATISTICS  —  HTF</b>`,
         `║  Performance Breakdown`,
         B_MID,
-        `║  🕐 <i>${ts}</i>`,
+        `║  ${PE.clock('🕐')} <i>${ts}</i>`,
         B_BOT,
         ``,
-        block('🌐  OVERALL', s.overall),
+        block(`${PE.stats('📊')}  OVERALL`, s.overall),
         ``,
-        block('⭐  A+ OVERALL', s.overall_aplus),
+        block(`${PE.star('⭐')}  A+ OVERALL`, s.overall_aplus),
         ``,
         block('🔶  B+ OVERALL', s.overall_bplus),
         ``,
         B_THIN,
         ``,
-        `📅 <b>DAILY CRT</b>`,
+        `${PE.daily('📅')} <b>DAILY CRT</b>`,
         ``,
-        block('All Daily',           s.daily),
+        block('All Daily',                              s.daily),
         ``,
-        block('⭐  Daily A+',        s.daily_aplus),
+        block(`${PE.star('⭐')}  Daily A+`,             s.daily_aplus),
         ``,
-        block('🔶  Daily B+',        s.daily_bplus),
+        block('🔶  Daily B+',                           s.daily_bplus),
         ``,
-        block('✅  MO+W Aligned',    s.daily_mo_w),
+        block(`${PE.check('✅')}  MO+W Aligned`,        s.daily_mo_w),
         ``,
-        block('⭐  MO+W A+',         s.daily_mo_w_aplus),
+        block(`${PE.star('⭐')}  MO+W A+`,              s.daily_mo_w_aplus),
         ``,
-        block('🔶  MO+W B+',         s.daily_mo_w_bplus),
+        block('🔶  MO+W B+',                            s.daily_mo_w_bplus),
         ``,
-        block('⚡  MO Aligned',      s.daily_mo),
+        block(`${PE.bolt('⚡')}  MO Aligned`,           s.daily_mo),
         ``,
-        block('⚡  W Aligned',       s.daily_w),
+        block(`${PE.bolt('⚡')}  W Aligned`,            s.daily_w),
         ``,
-        block('⚪  No Alignment',    s.daily_none),
-        ``,
-        B_THIN,
-        ``,
-        `📆 <b>WEEKLY CRT</b>`,
-        ``,
-        block('All Weekly',          s.weekly),
-        ``,
-        block('⭐  Weekly A+',       s.weekly_aplus),
-        ``,
-        block('🔶  Weekly B+',       s.weekly_bplus),
-        ``,
-        block('⚡  MO Aligned',      s.weekly_mo),
-        ``,
-        block('⭐  MO A+',           s.weekly_mo_aplus),
-        ``,
-        block('🔶  MO B+',           s.weekly_mo_bplus),
-        ``,
-        block('⚪  No Alignment',    s.weekly_none),
+        block(`${PE.cross('❌')}  No Alignment`,        s.daily_none),
         ``,
         B_THIN,
         ``,
-        `⏰ <b>4H CRT</b>`,
+        `${PE.weekly('📆')} <b>WEEKLY CRT</b>`,
         ``,
-        block('All 4H',              s.fourh),
+        block('All Weekly',                             s.weekly),
         ``,
-        block('⭐  4H A+',           s.fourh_aplus),
+        block(`${PE.star('⭐')}  Weekly A+`,            s.weekly_aplus),
         ``,
-        block('🔶  4H B+',           s.fourh_bplus),
+        block('🔶  Weekly B+',                          s.weekly_bplus),
         ``,
-        block('✅  D+W+MO Aligned',  s.fourh_dwm),
+        block(`${PE.bolt('⚡')}  MO Aligned`,           s.weekly_mo),
         ``,
-        block('⚡  D+W Aligned',     s.fourh_dw),
+        block(`${PE.star('⭐')}  MO A+`,                s.weekly_mo_aplus),
         ``,
-        block('⚡  D+MO Aligned',    s.fourh_dmo),
+        block('🔶  MO B+',                              s.weekly_mo_bplus),
         ``,
-        block('⚡  D Aligned',       s.fourh_d),
+        block(`${PE.cross('❌')}  No Alignment`,        s.weekly_none),
         ``,
-        block('⚡  W+MO Aligned',    s.fourh_wmo),
+        B_THIN,
         ``,
-        block('⚡  W Aligned',       s.fourh_w),
+        `${PE.alarm('⏰')} <b>4H CRT</b>`,
         ``,
-        block('⚡  MO Aligned',      s.fourh_mo),
+        block('All 4H',                                 s.fourh),
         ``,
-        block('⚪  No Alignment',    s.fourh_none),
+        block(`${PE.star('⭐')}  4H A+`,                s.fourh_aplus),
+        ``,
+        block('🔶  4H B+',                              s.fourh_bplus),
+        ``,
+        block(`${PE.check('✅')}  D+W+MO Aligned`,      s.fourh_dwm),
+        ``,
+        block(`${PE.bolt('⚡')}  D+W Aligned`,          s.fourh_dw),
+        ``,
+        block(`${PE.bolt('⚡')}  D+MO Aligned`,         s.fourh_dmo),
+        ``,
+        block(`${PE.bolt('⚡')}  D Aligned`,            s.fourh_d),
+        ``,
+        block(`${PE.bolt('⚡')}  W+MO Aligned`,         s.fourh_wmo),
+        ``,
+        block(`${PE.bolt('⚡')}  W Aligned`,            s.fourh_w),
+        ``,
+        block(`${PE.bolt('⚡')}  MO Aligned`,           s.fourh_mo),
+        ``,
+        block(`${PE.cross('❌')}  No Alignment`,        s.fourh_none),
         ``,
         B_DASH,
     ].join('\n');
@@ -975,14 +1018,18 @@ async function sendBotCRTNotification(kind, sym, tf, side, alignLevel, grade, { 
     if (Object.keys(botSessions).length === 0) return;
 
     const tfLabel    = tf === '1D' ? '📅 DAILY' : tf === '1W' ? '📆 WEEKLY' : '⏰ 4H';
-    const gradeLabel = grade === 'A+' ? '⭐ A+' : grade === 'B+' ? '🔶 B+' : '';
-    const gradeBarStr = grade === 'A+' ? '🌟🌟🌟🌟🌟' : grade === 'B+' ? '🔶🔶🔶🔶🔶' : '';
+    const gradeLabel  = grade === 'A+' ? `${PE.star('⭐')} A+` : grade === 'B+' ? '🔶 B+' : '';
+    const gradeBarStr = grade === 'A+' 
+        ? `${PE.star('⭐')}${PE.star('⭐')}${PE.star('⭐')}${PE.star('⭐')}${PE.star('⭐')}` 
+        : '🔶🔶🔶🔶🔶';
 
     const accentBar = kind === 'CRT'
-        ? (grade === 'A+' ? '🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟' : '🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶🔶')
+        ? (grade === 'A+' 
+            ? `${PE.star('⭐')}${PE.star('⭐')}${PE.star('⭐')}${PE.star('⭐')}${PE.star('⭐')}${PE.star('⭐')}${PE.star('⭐')}`
+            : '🔶🔶🔶🔶🔶🔶🔶')
         : kind === 'CRT_TARGET'
-        ? '🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯🎯'
-        : '🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥';
+        ? '🎯🎯🎯🎯🎯🎯🎯'
+        : `${PE.cross('❌')}${PE.cross('❌')}${PE.cross('❌')}${PE.cross('❌')}${PE.cross('❌')}${PE.cross('❌')}${PE.cross('❌')}`;
 
     const header = kind === 'CRT'
         ? `🔔 <b>NEW CRT SIGNAL</b>`
@@ -1019,7 +1066,7 @@ async function sendBotCRTNotification(kind, sym, tf, side, alignLevel, grade, { 
         ``,
         `  ┃  Rej <code>${rej}</code>   BO <code>${bo}</code>`,
         `  ┃  Ext <code>${ext}</code>   Tgt <code>${tgt}</code>${kind === 'CRT_TARGET' ? '  ✅' : ''}`,
-        `  ┗  🕐 ${nowUTC()}`,
+        `  ┗  ${PE.clock('🕐')} ${nowUTC()}`,
         probLine,
         ``,
         accentBar,
@@ -1119,30 +1166,30 @@ if (update.message) {
             `║  Command Reference`,
             B_BOT,
             ``,
-            `  /start      🏠 Main terminal`,
-            `  /daily      📅 Daily CRTs (aligned)`,
-            `  /weekly     📆 Weekly CRTs (MO)`,
-            `  /4h         ⏰ 4H CRTs (aligned)`,
-            `  /active     🟢 Active positions`,
-            `  /stats      📊 Performance stats`,
+            `  /start      ${PE.home('🏠')} Main terminal`,
+            `  /daily      ${PE.daily('📅')} Daily CRTs (aligned)`,
+            `  /weekly     ${PE.weekly('📆')} Weekly CRTs (MO)`,
+            `  /4h         ${PE.alarm('⏰')} 4H CRTs (aligned)`,
+            `  /active     ${PE.green('🟢')} Active positions`,
+            `  /stats      ${PE.stats('📊')} Performance stats`,
             `  /help       ❓ This help`,
             ``,
             B_THIN,
             ``,
-            `  <b>🔔 Grades:</b>`,
-            `  ⭐ A+ = Sweep + SNR Rejection + BO`,
+            `  <b>${PE.signal('📡')} Grades:</b>`,
+            `  ${PE.star('⭐')} A+ = Sweep + SNR Rejection + BO`,
             `  🔶 B+ = Sweep + BO (no rejection)`,
             ``,
-            `  <b>🔔 Auto-Notifications:</b>`,
-            `  📅 Daily  →  MO+W ✅  MO ⚡  W ⚡`,
-            `  📆 Weekly →  MO aligned ⚡ only`,
-            `  ⏰ 4H     →  D / D+W / D+MO / W+MO / D+W+MO ✅`,
+            `  <b>${PE.signal('📡')} Auto-Notifications:</b>`,
+            `  ${PE.daily('📅')} Daily  →  MO+W ${PE.check('✅')}  MO ${PE.bolt('⚡')}  W ${PE.bolt('⚡')}`,
+            `  ${PE.weekly('📆')} Weekly →  MO aligned ${PE.bolt('⚡')} only`,
+            `  ${PE.alarm('⏰')} 4H     →  D / D+W / D+MO / W+MO / D+W+MO ${PE.check('✅')}`,
             ``,
-            `  <b>📊 Hit Probability:</b>`,
+            `  <b>${PE.stats('📊')} Hit Probability:</b>`,
             `  New CRT alerts show historical`,
             `  hit rate for that exact combo`,
             ``,
-            `  <b>📡 Live Auto-Refresh:</b>`,
+            `  <b>${PE.signal('📡')} Live Auto-Refresh:</b>`,
             `  Panels update automatically`,
             ``,
             B_DASH,
